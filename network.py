@@ -72,7 +72,7 @@ class Net(object):
                                 weights_regularizer=slim.l2_regularizer(self.wd)):
 
                 # Convolution
-                net = slim.conv2d(net, 64, [7, 7],
+                net = slim.conv2d(net, self.growth_rate*2, [7, 7],
                                   2, scope='conv7x7', padding='SAME')
 
                 # Pooling
@@ -91,22 +91,32 @@ class Net(object):
                 # Transition Layer 2
                 net = self.Transition_Layer(net, scope='TransitionLayer_2')
 
+                net = tf.layers.batch_normalization(
+                    net, trainable=self.is_training, name='BN_block2')
+
                 # Dense Block 3
                 net = self.Dense_Block(net, block_num=6, scope='DenseBlock_3')
 
                 # Transition Layer 3
                 net = self.Transition_Layer(net, scope='TransitionLayer_3')
 
+                net = tf.layers.batch_normalization(
+                    net, trainable=self.is_training, name='BN_block3')
+
                 # Dense Block 4
                 net = self.Dense_Block(net, block_num=6, scope='DenseBlock_4')
 
                 # Global Average Pool
-                net = slim.max_pool2d(
+                net = slim.avg_pool2d(
                     net, [7, 7], 1, scope='pool7x7', padding='SAME')
 
                 # Fc
                 net = tf.layers.flatten(net)
                 net = tf.layers.dense(net, 1000)
+
+                # Drop Out
+                if self.is_training:
+                    net = tf.layers.dropout(inputs=net, rate=1-self.keep_rate)
 
                 # Softmax
                 net = tf.layers.dense(net, self.cls_num)
@@ -198,7 +208,13 @@ class Net(object):
 
                 acc = np.mean(np.array(acc_list))
 
+                mean_loss = str(mean_loss)
+
                 print('Epoch:{} Loss:{} Acc:{}'.format(epoch, mean_loss, acc))
+
+                with open('./losses.txt', 'a') as f:
+
+                    f.write(mean_loss+'\n')
 
                 self.saver.save(sess, self.model_name)
 

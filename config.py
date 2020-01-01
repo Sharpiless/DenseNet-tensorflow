@@ -29,11 +29,11 @@ MODEL_NAME = './model/model.ckpt'
 
 TARGET_SIZE = 224
 
-EPOCHES = 400
+EPOCHES = 500
 
-BATCHES = 32
+BATCHES = 128
 
-KEEP_RATE = 1.0
+KEEP_RATE = 0.85
 
 CLASSES = ['knife', 'keyboard', 'elephant',
            'bicycle', 'airplane',  'clock',

@@ -55,6 +55,23 @@ class Reader(object):
 
         return image
 
+    def random_flip(self, image):
+    
+        if random.randint(0, 1):
+
+            return np.flip(image, axis=1)
+
+        return image
+
+    def equalize(self, image):
+
+        if random.randint(0, 1):
+    
+            image = cv2.equalizeHist(image)
+
+        return image.astype(np.int)
+
+
     def resize_image(self, image):
 
         image_shape = image.shape
@@ -132,9 +149,13 @@ class Reader(object):
 
         image = cv2.imread(path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        image = self.random_flip(image)
+
+        # image = image.astype(np.float) - 122.5
         image = self.normalize(image)
 
-        return image.astype(np.float)
+        return image
 
     def one_hot(self, label):
 
@@ -209,7 +230,7 @@ if __name__ == "__main__":
 
         value = reader.generate(1)
 
-        image = value['images']
+        image = (value['images']+122.5).astype(np.int)
         image = np.squeeze(image)
 
         label = value['labels']
