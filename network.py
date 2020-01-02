@@ -116,6 +116,7 @@ class Net(object):
 
                 # Drop Out
                 if self.is_training:
+
                     net = tf.layers.dropout(inputs=net, rate=1-self.keep_rate)
 
                 # Softmax
@@ -127,15 +128,26 @@ class Net(object):
 
         net = inputs
 
+        tmp = []
+
         with tf.variable_scope(scope):
 
+            net = slim.conv2d(inputs, self.growth_rate, [1, 1],
+                              scope='conv1x1', padding='SAME')
+
             for k in range(block_num):
+
+                tmp.append(self.copy_tensor(net))
 
                 net = slim.conv2d(inputs, self.growth_rate, [1, 1],
                                   scope='conv1x1_{}'.format(k), padding='SAME')
 
                 net = slim.conv2d(inputs, self.growth_rate, [3, 3],
                                   scope='conv3x3_{}'.format(k), padding='SAME')
+
+                for value in tmp:
+
+                    net = tf.add(net, value)
 
         return net
 
@@ -145,13 +157,21 @@ class Net(object):
 
         with tf.variable_scope(scope):
 
-            net = slim.conv2d(inputs, self.growth_rate, [1, 1],
+            net = slim.conv2d(inputs, self.growth_rate*2, [1, 1],
                               scope='conv1x1', padding='SAME')
 
             net = slim.max_pool2d(
                 net, [2, 2], scope='pool2x2', padding='SAME')
 
         return net
+
+    def copy_tensor(self, tensor):
+
+        one = tf.constant(1.0, dtype=tf.float32)
+
+        copy = tf.multiply(tensor, one)
+
+        return copy
 
     def train_net(self):
 
@@ -209,12 +229,13 @@ class Net(object):
                 acc = np.mean(np.array(acc_list))
 
                 mean_loss = str(mean_loss)
+                acc = str(acc)
 
                 print('Epoch:{} Loss:{} Acc:{}'.format(epoch, mean_loss, acc))
 
                 with open('./losses.txt', 'a') as f:
 
-                    f.write(mean_loss+'\n')
+                    f.write(mean_loss+' '+acc+'\n')
 
                 self.saver.save(sess, self.model_name)
 
